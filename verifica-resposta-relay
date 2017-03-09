@@ -1,0 +1,59 @@
+#!/bin/bash
+
+#INICIAR VARIAVEIS DE TEXTO
+CONTENT_TYPE="Content-Type: application/json"
+AUTH_TOKEN="Authorization: xxxx"
+URL_ACCESS="https://api.sparkpost.com/api/v1"
+FILTER="message-events?events=bounce"
+ZONE="America%2FSao_Paulo"
+
+#AJUSTAR DATAS
+CURRENT_DATE=$(date --iso-8601=minutes) 					#pega a data atual
+CURRENT_DATE_MINUS=$(date --date "$CURRENT_DATE -2 min" --iso-8601=minutes)	#diminui 2 minutos a data atual
+FROM=${CURRENT_DATE_MINUS:0:16}							#retira os caracteres desnecessarios
+TO=${CURRENT_DATE:0:16}								#retira os caracteres desnecessarios
+
+#REALIZA A REQUISIÇÃO
+RESULT=$(curl -H "$CONTENT_TYPE" -H "$AUTH_TOKEN" -X GET "$URL_ACCESS/$FILTER&from=$FROM&timezone=$ZONE&to=$TO")
+
+#SALVA EM UM ARQUIVO TEMPORARIO
+if [ ! -z "{$RESULT}"  ];
+then
+cat > /tmp/bounceresult.txt <<EOF
+$RESULT
+EOF
+fi
+
+#EXTRAI OS DADOS NECESSARIOS DO ARQUIVO OBTIDO
+TOTAL_COUNT=$(grep -Po '"total_count":(\d*?,|.*?[^\\]",)' /tmp/bounceresult.txt | perl -pe 's/"total_count"://; s/^"//; s/,$//')
+FRIENDLY_FROM=$(grep -Po '"friendly_from":(\d*?,|.*?[^\\]",)' /tmp/bounceresult.txt | perl -pe 's/"friendly_from"://; s/^"//; s/",$//')
+RCPT_TO=$(grep -Po '"rcpt_to":(\d*?,|.*?[^\\]",)' /tmp/bounceresult.txt | perl -pe 's/"rcpt_to"://; s/^"//; s/",$//')
+RAW_REASON=$(grep -Po '"raw_reason":(\d*?,|.*?[^\\]",)' /tmp/bounceresult.txt | perl -pe 's/"raw_reason"://; s/^"//; s/",$//')
+
+#REALIZA A DIVISÃO DOS DADOS OBTENDO UM ARRAY COMO RESULTADO FINAL PARA CADA VARIAVEL (o coringa para dividir é a quebra de linha \n)
+IFS=$'\n' ARR_FF=($FRIENDLY_FROM)
+IFS=$'\n' ARR_RT=($RCPT_TO)
+IFS=$'\n' ARR_RR=($RAW_REASON)
+
+#ENVIA OS EMAILS DE FALHA
+for ((i=0;i<TOTAL_COUNT;i++)); do
+
+cat <<EOF | /usr/sbin/sendmail -t
+To: ${ARR_FF[$i]}
+Subject: FALHA AO ENVIAR MENSAGEM
+From: no-reply@start.st.art.br
+MIME-Version: 1.0
+Content-Type: text/html; charset=utf-8
+
+<pre>
+Falha ao enviar mensagem para o e-mail: ${ARR_RT[$i]}
+
+Motivo: Este endereço de e-mail não existe!!
+
+Detalhes técnicos: ${ARR_RR[$i]}
+</pre>
+
+EOF
+
+done
+
