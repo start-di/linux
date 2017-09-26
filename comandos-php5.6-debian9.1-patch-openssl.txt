@@ -1,0 +1,46 @@
+=================================================
+Comandos utilizados para compilar:
+
+apt-get install build-essential nano autoconf
+
+apt-get install libmcrypt-dev libssl-dev libc-client2007e libc-client2007e-dev libxml2-dev libbz2-dev libcurl4-openssl-dev libjpeg-dev libfreetype6-dev libkrb5-dev libpq-dev libxml2-dev libxslt1-dev libicu-dev
+
+ln -s /usr/include/x86_64-linux-gnu/curl /usr/include/curl
+
+ln -s /usr/lib/libc-client.a /usr/lib/x86_64-linux-gnu/libc-client.a
+
+mkdir -p /opt/php-5.6
+
+mkdir /usr/local/src/php5-build; cd /usr/local/src/php5-build;
+
+wget http://br2.php.net/get/php-5.6.31.tar.bz2/from/this/mirror -O php-5.6.tar.bz2
+
+tar jxf php-5.6.tar.bz2; cd php-5.6.31;
+
+./configure --prefix=/opt/php-5.6 --with-pdo-pgsql --with-zlib-dir --with-freetype-dir --enable-mbstring --with-libxml-dir=/usr --enable-soap --enable-calendar --with-curl --with-mcrypt --with-zlib --with-gd --with-pgsql --disable-rpath --enable-inline-optimization --with-bz2 --with-zlib --enable-sockets --enable-sysvsem --enable-sysvshm --enable-pcntl --enable-mbregex --enable-exif --enable-bcmath --with-mhash --enable-zip --with-pcre-regex --with-pdo-mysql --with-mysqli --with-mysql-sock=/var/run/mysqld/mysqld.sock --with-jpeg-dir=/usr --with-png-dir=/usr --enable-gd-native-ttf --with-openssl --with-fpm-user=www-data --with-fpm-group=www-data --with-libdir=/lib/x86_64-linux-gnu --enable-ftp --with-imap --with-imap-ssl --with-kerberos --with-gettext --with-xmlrpc --with-xsl --enable-opcache --enable-fpm --enable-intl
+
+wget http://zettasystem.com/PHP-5.6.31-OpenSSL-1.1.0-compatibility-20170801.patch
+
+patch -p1 < ./PHP-5.6.31-OpenSSL-1.1.0-compatibility-20170801.patch
+
+make
+
+make install
+
+Obs: utilize "make clean" caso tenha utilizado "make" anteriormente sem aplicar o patch.
+
+=================================================
+Comandos utilizados para instalar a partir do repositório:
+
+apt-get install apt-transport-https lsb-release ca-certificates
+
+wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
+
+echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list
+
+apt-get update
+
+apt-cache search php5.6
+
+apt-get install php5.6
+=================================================
